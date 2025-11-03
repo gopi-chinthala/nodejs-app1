@@ -1,20 +1,71 @@
-name: CICD
+name: CI/CD Node App - EC2 Deploy (GitHub Artifact)
 
 on:
   push:
-    branches: [main,master]
-    
+    branches: [ "main" ]
+
 jobs:
-  build:
-    runs-on: [ubuntu-latest]
+  build-test-upload:
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v3
-      - name: Set Node.js 16.x
-        uses: actions/setup-node@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
-      - name: Install Dependencies
-        run : npm install
-      - name: Test Project
+          node-version: 18.x   # ✅ Stable Node LTS
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
         run: npm test
+
+      - name: Package app
+        run: |
+          zip -r node-app.zip . -x "*.git*" "node_modules/*" ".github/*"
+
+      - name: Upload artifact to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: node-app.zip
+
+  deploy:
+    needs: build-test-upload
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+          path: .
+
+      - name: Copy and Deploy to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          source: "node-app.zip"
+          target: "/home/ubuntu/gopi1/nodejs-app/"
+
+      - name: Deploy on EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /home/ubuntu/gopi1/nodejs-app
+            unzip -o node-app.zip
+            npm ci --production
+
+            # Restart Node.js app
+            pm2 restart nodejs-app || pm2 start index.js --name nodejs-app
