@@ -50,7 +50,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}   # ✅ changed to match your new key
           port: ${{ secrets.PORT }}
           source: "node-app.zip"
           target: "/home/ubuntu/gopi1/nodejs-app/"
@@ -60,12 +60,10 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}   # ✅ same secret name used here
           port: ${{ secrets.PORT }}
           script: |
             cd /home/ubuntu/gopi1/nodejs-app
             unzip -o node-app.zip
             npm install --production
-
-            # Restart Node.js app
             pm2 restart nodejs-app || pm2 start index.js --name nodejs-app
