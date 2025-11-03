@@ -18,7 +18,7 @@ jobs:
           node-version: 18.x   # ✅ Stable Node LTS
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run tests
         run: npm test
@@ -65,7 +65,8 @@ jobs:
           script: |
             cd /home/ubuntu/gopi1/nodejs-app
             unzip -o node-app.zip
-            npm ci --production
+            npm install --production
+
 
             # Restart Node.js app
             pm2 restart nodejs-app || pm2 start index.js --name nodejs-app
