@@ -90,21 +90,16 @@ jobs:
             APP_DIR="/home/ubuntu/nodejs-app"
             mkdir -p "$APP_DIR/backup"
             cd "$APP_DIR"
-
             # Backup old zip
             [ -f "node-app.zip" ] && mv node-app.zip backup/node-app-$(date +%s).zip
-
             # Extract new code
             unzip -o node-app.zip
-
             # Install production dependencies
             npm install --production
-
             # Restart PM2 app
             pm2 delete nodejs-app 2>/dev/null || true
             pm2 start server.js --name nodejs-app --update-env
             pm2 save
-
             # Show status
             pm2 status
             echo "✅ Deployment successful!"
@@ -112,5 +107,3 @@ jobs:
 
       - name: Success
         run: echo "🎉 App deployed! Visit: http://${{ secrets.HOST }}:3000"
-
-        
