@@ -24,19 +24,11 @@ jobs:
       - name: Run tests (optional)
         run: echo "Add tests later: npm test"
 
-      - name: Create build artifact
-        run: |
-          zip -r node-app.zip . \
-            -x "*.git*" \
-            -x "node_modules/*" \
-            -x ".github/*" \
-            -x "*.log"
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: node-app.zip
+          path: .
           retention-days: 1
 
   deploy:
@@ -74,10 +66,10 @@ jobs:
 
       - name: Copy app to EC2
         run: |
-          echo "Uploading node-app.zip..."
+          echo "Uploading app files..."
           scp -o StrictHostKeyChecking=no \
               -P ${{ secrets.PORT }} \
-              node-app.zip \
+              -r ./* \
               ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/ubuntu/nodejs-app/
 
       - name: Deploy on EC2
@@ -88,19 +80,11 @@ jobs:
               ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
             set -e
             APP_DIR="/home/ubuntu/nodejs-app"
-            mkdir -p "$APP_DIR/backup"
             cd "$APP_DIR"
-            # Backup old zip
-            [ -f "node-app.zip" ] && mv node-app.zip backup/node-app-$(date +%s).zip
-            # Extract new code
-            unzip -o node-app.zip
-            # Install production dependencies
             npm install --production
-            # Restart PM2 app
             pm2 delete nodejs-app 2>/dev/null || true
             pm2 start server.js --name nodejs-app --update-env
             pm2 save
-            # Show status
             pm2 status
             echo "✅ Deployment successful!"
           EOF
