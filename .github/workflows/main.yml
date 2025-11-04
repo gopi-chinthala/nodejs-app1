@@ -53,7 +53,7 @@ jobs:
           target: "/home/ubuntu/nodejs-app/"
 
       - name: Deploy on EC2 via SSH
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
@@ -63,4 +63,4 @@ jobs:
             cd /home/ubuntu/nodejs-app
             unzip -o node-app.zip
             npm install --production
-            pm2 restart nodejs-app || pm2 start index.js --name nodejs-app
+            pm2 restart nodejs-app || pm2 start server.js --name nodejs-app
